@@ -16,6 +16,9 @@ namespace esphome
 {
     namespace samsung_ac
     {
+        void (*nonnasa_altmode_sink)(uint8_t value) = nullptr;
+        int nonnasa_altmode_source = -1;
+
         static bool pending_keepalive_ = false;
         static uint32_t pending_keepalive_due_ms_ = 0;
         static uint32_t last_keepalive_sent_ms_ = 0;
@@ -693,7 +696,10 @@ namespace esphome
 
             if (request.alt_mode)
             {
-                LOGW("change altmode is currently not implemented");
+                if (nonnasa_altmode_sink != nullptr)
+                    nonnasa_altmode_sink(request.alt_mode.value());
+                else
+                    LOGW("change altmode is currently not implemented");
             }
 
             if (request.swing_mode)
@@ -918,8 +924,8 @@ namespace esphome
                     // TODO
                     target->set_water_heater_mode(nonpacket_.src, nonnasa_water_heater_mode_to_mode(-0));
                     target->set_fanmode(nonpacket_.src, nonnasa_fanspeed_to_fanmode(nonpacket_.command20.fanspeed));
-                    // TODO
-                    target->set_altmode(nonpacket_.src, 0);
+                    if (nonnasa_altmode_source >= 0)
+                        target->set_altmode(nonpacket_.src, (AltMode) nonnasa_altmode_source);
                     // Cmd20 swing decode: converting wind_direction to vertical/horizontal booleans
                     target->set_swing_horizontal(nonpacket_.src,
                                                  (nonpacket_.command20.wind_direction == NonNasaWindDirection::Horizontal) ||

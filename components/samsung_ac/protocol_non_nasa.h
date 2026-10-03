@@ -10,6 +10,13 @@ namespace esphome
 {
     namespace samsung_ac
     {
+        // Non-NASA units carry no alt mode (preset) on the F1/F2 bus. These hooks let another
+        // channel provide it, e.g. the indoor unit's Wi-Fi kit UART (CN51):
+        // - nonnasa_altmode_sink: called with the alt mode value when a preset is requested.
+        // - nonnasa_altmode_source: current alt mode, reported with every Cmd20 (-1 = unknown).
+        extern void (*nonnasa_altmode_sink)(uint8_t value);
+        extern int nonnasa_altmode_source;
+
         enum class NonNasaFanspeed : uint8_t
         {
             Auto = 0,
