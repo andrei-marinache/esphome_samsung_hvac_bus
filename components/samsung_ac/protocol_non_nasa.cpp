@@ -16,7 +16,7 @@ namespace esphome
 {
     namespace samsung_ac
     {
-        void (*nonnasa_altmode_sink)(uint8_t value) = nullptr;
+        void (*nonnasa_request_sink)(const ProtocolRequest &request) = nullptr;
         int nonnasa_altmode_source = -1;
 
         static bool pending_keepalive_ = false;
@@ -677,12 +677,11 @@ namespace esphome
 
         void NonNasaProtocol::publish_request(MessageTarget *target, const std::string &address, ProtocolRequest &request)
         {
-            // A preset alone goes only through the alt mode sink: a B0 request would also reach the
-            // indoor unit as a new "remote" setting and cancel the special mode just set.
-            if (request.alt_mode && nonnasa_altmode_sink != nullptr && !request.power && !request.mode &&
-                !request.target_temp && !request.fan_mode && !request.swing_mode)
+            // Controlled through another channel: a B0 request would also reach the indoor unit as a
+            // new central-controller setting (and cancel special modes such as quiet).
+            if (nonnasa_request_sink != nullptr)
             {
-                nonnasa_altmode_sink(request.alt_mode.value());
+                nonnasa_request_sink(request);
                 return;
             }
 
@@ -705,10 +704,7 @@ namespace esphome
 
             if (request.alt_mode)
             {
-                if (nonnasa_altmode_sink != nullptr)
-                    nonnasa_altmode_sink(request.alt_mode.value());
-                else
-                    LOGW("change altmode is currently not implemented");
+                LOGW("change altmode is currently not implemented");
             }
 
             if (request.swing_mode)
@@ -802,6 +798,9 @@ namespace esphome
 
         void send_register_controller(MessageTarget *target)
         {
+            if (nonnasa_request_sink != nullptr)
+                return; // read-only on F1/F2: control goes through the request sink
+
             LOGD("Sending controller registration request...");
 
             // Registers our device as a "controller" with the outdoor unit. This will cause the
