@@ -677,6 +677,15 @@ namespace esphome
 
         void NonNasaProtocol::publish_request(MessageTarget *target, const std::string &address, ProtocolRequest &request)
         {
+            // A preset alone goes only through the alt mode sink: a B0 request would also reach the
+            // indoor unit as a new "remote" setting and cancel the special mode just set.
+            if (request.alt_mode && nonnasa_altmode_sink != nullptr && !request.power && !request.mode &&
+                !request.target_temp && !request.fan_mode && !request.swing_mode)
+            {
+                nonnasa_altmode_sink(request.alt_mode.value());
+                return;
+            }
+
             auto req = NonNasaRequest::create(address);
 
             if (request.mode)
