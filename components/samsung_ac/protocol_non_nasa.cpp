@@ -998,6 +998,13 @@ namespace esphome
                 target->set_custom_sensor(nonpacket_.src, 0xF004, nonpacket_.commandF0.outdoor_unit_defrost_control ? 1.0f : 0.0f);
                 target->set_custom_sensor(nonpacket_.src, 0xF008, (float)nonpacket_.commandF0.outdoor_unit_bldc_fan);
             }
+            else if (nonpacket_.cmd == NonNasaCommand::CmdF3)
+            {
+                // CmdF3 from the outdoor unit. data[8] follows the unit's input current in 0.1 A (checked
+                // against a plug meter on an AR12HSFS: plug W / A = 218-229 at steady state); data[9], read
+                // as voltage above, is always 0 there. Published as a custom sensor so YAML can use it.
+                target->set_custom_sensor(nonpacket_.src, 0xF308, nonpacket_.commandF3.inverter_current_a);
+            }
             else if (nonpacket_.cmd == NonNasaCommand::CmdC6)
             {
                 // We have received a request_control message. This is a message outdoor units will
